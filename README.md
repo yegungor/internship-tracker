@@ -68,25 +68,29 @@ A modern web application to track and manage your internship and job application
 
 ```
 internship-tracker/
-├── app.py                 # Main Flask application
-├── models.py              # Database models
-├── requirements.txt       # Python dependencies
-├── README.md              # This file
-├── .gitignore             # Git ignore rules
+├── app.py                     # Main Flask application
+├── models.py                  # Database models
+├── requirements.txt           # Python dependencies
+├── README.md                  # This file
+├── .gitignore                 # Git ignore rules
+├── LICENSE                    # MIT License
 ├── instance/
-│   └── tracker.db         # SQLite database (auto-created)
+│   └── tracker.db             # SQLite database (auto-created)
 ├── static/
 │   ├── css/
-│   │   └── style.css      # Custom styles
+│   │   ├── style-default.css          # Active theme (rename to switch)
+│   │   ├── style-glass.css    # Glassmorphism theme
+│   │   ├── style-minimal.css  # Minimalist light theme
+│   │   └── style-retro.css    # Retro pixel theme
 │   └── js/
-│       └── main.js        # Frontend JavaScript
+│       └── main.js            # Frontend JavaScript
 └── templates/
-    ├── base.html          # Base template
-    ├── index.html         # Dashboard
-    ├── applications.html  # All applications view
-    ├── add.html           # Add new application
-    ├── edit.html          # Edit application
-    └── view.html          # Single application view
+    ├── base.html              # Base template
+    ├── index.html             # Dashboard
+    ├── applications.html      # All applications view
+    ├── add.html               # Add new application
+    ├── edit.html              # Edit application
+    └── view.html              # Single application view
 ```
 
 ## Usage
