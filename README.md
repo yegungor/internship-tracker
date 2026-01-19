@@ -40,7 +40,7 @@ A modern web application to track and manage your internship and job application
 
 2. **Create a virtual environment**
    ```bash
-   python -m venv venv
+   python3 -m venv venv #For macOS, python3.
    
    # On Windows
    venv\Scripts\activate
