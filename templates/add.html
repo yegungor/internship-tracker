@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Add Application - Internship Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{{ url_for('applications') }}" class="back-link">
+            <i data-lucide="arrow-left"></i>
+            Back to Applications
+        </a>
+        <h1>Add New Application</h1>
+    </div>
+</div>
+
+<form method="POST" class="application-form">
+    <div class="form-grid">
+        <!-- Company Information -->
+        <div class="form-section">
+            <h2 class="section-title">
+                <i data-lucide="building-2"></i>
+                Company Information
+            </h2>
+            
+            <div class="form-group">
+                <label for="company">Company Name *</label>
+                <input type="text" id="company" name="company" required placeholder="e.g., Google">
+            </div>
+            
+            <div class="form-group">
+                <label for="company_website">Company Website</label>
+                <input type="url" id="company_website" name="company_website" placeholder="https://example.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="location">Location</label>
+                <input type="text" id="location" name="location" placeholder="e.g., San Francisco, CA">
+            </div>
+        </div>
+        
+        <!-- Position Details -->
+        <div class="form-section">
+            <h2 class="section-title">
+                <i data-lucide="briefcase"></i>
+                Position Details
+            </h2>
+            
+            <div class="form-group">
+                <label for="job_title">Job Title *</label>
+                <input type="text" id="job_title" name="job_title" required placeholder="e.g., Software Engineering Intern">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="position_level">Position Level</label>
+                    <select id="position_level" name="position_level">
+                        <option value="Intern">Intern</option>
+                        <option value="Junior">Junior</option>
+                        <option value="Mid">Mid-Level</option>
+                        <option value="Senior">Senior</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="job_type">Job Type</label>
+                    <select id="job_type" name="job_type">
+                        <option value="Full-time">Full-time</option>
+                        <option value="Part-time">Part-time</option>
+                        <option value="Contract">Contract</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="work_mode">Work Mode</label>
+                    <select id="work_mode" name="work_mode">
+                        <option value="On-site">On-site</option>
+                        <option value="Remote">Remote</option>
+                        <option value="Hybrid">Hybrid</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="job_posting_url">Job Posting URL</label>
+                <input type="url" id="job_posting_url" name="job_posting_url" placeholder="Link to job posting">
+            </div>
+            
+            <div class="form-group">
+                <label for="salary_range">Salary Range</label>
+                <input type="text" id="salary_range" name="salary_range" placeholder="e.g., $25-30/hr or $80k-100k">
+            </div>
+        </div>
+        
+        <!-- Requirements -->
+        <div class="form-section full-width">
+            <h2 class="section-title">
+                <i data-lucide="list-checks"></i>
+                Requirements
+            </h2>
+            
+            <div class="form-group">
+                <label for="requirements">Key Requirements & Qualifications</label>
+                <textarea id="requirements" name="requirements" rows="4" 
+                          placeholder="List the skills, qualifications, and requirements for this position..."></textarea>
+                <span class="form-hint">Skills, education, experience needed for the role</span>
+            </div>
+        </div>
+        
+        <!-- Application Status -->
+        <div class="form-section">
+            <h2 class="section-title">
+                <i data-lucide="flag"></i>
+                Application Status
+            </h2>
+            
+            <div class="form-group">
+                <label for="status">Current Status</label>
+                <select id="status" name="status">
+                    <option value="saved">Saved (not applied yet)</option>
+                    <option value="applied">Applied</option>
+                    <option value="interviewing">Interviewing</option>
+                    <option value="offer">Received Offer</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="withdrawn">Withdrawn</option>
+                </select>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="date_applied">Date Applied</label>
+                    <input type="date" id="date_applied" name="date_applied">
+                </div>
+                
+                <div class="form-group">
+                    <label for="deadline">Application Deadline</label>
+                    <input type="date" id="deadline" name="deadline">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tags and Notes -->
+        <div class="form-section">
+            <h2 class="section-title">
+                <i data-lucide="tags"></i>
+                Tags & Notes
+            </h2>
+            
+            <div class="form-group">
+                <label for="tags">Tags</label>
+                <input type="text" id="tags" name="tags" placeholder="e.g., Tech, Startup, Dream Company">
+                <span class="form-hint">Separate tags with commas</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="notes">Notes</label>
+                <textarea id="notes" name="notes" rows="3" 
+                          placeholder="Any additional notes about this application..."></textarea>
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-actions">
+        <a href="{{ url_for('applications') }}" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+            <i data-lucide="save"></i>
+            Save Application
+        </button>
+    </div>
+</form>
+{% endblock %}

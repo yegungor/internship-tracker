@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block title %}{{ app.company }} - {{ app.job_title }} - Internship Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{{ url_for('applications') }}" class="back-link">
+            <i data-lucide="arrow-left"></i>
+            Back to Applications
+        </a>
+        <h1>{{ app.company }}</h1>
+        <p class="subtitle">{{ app.job_title }}</p>
+    </div>
+    <div class="header-actions">
+        <div class="status-dropdown large">
+            <button class="status-badge status-{{ app.status }} large" onclick="toggleStatusMenu(this)">
+                {{ app.status }}
+                <i data-lucide="chevron-down"></i>
+            </button>
+            <div class="status-menu">
+                <button onclick="updateStatus({{ app.id }}, 'saved')">Saved</button>
+                <button onclick="updateStatus({{ app.id }}, 'applied')">Applied</button>
+                <button onclick="updateStatus({{ app.id }}, 'interviewing')">Interviewing</button>
+                <button onclick="updateStatus({{ app.id }}, 'offer')">Offer</button>
+                <button onclick="updateStatus({{ app.id }}, 'rejected')">Rejected</button>
+                <button onclick="updateStatus({{ app.id }}, 'withdrawn')">Withdrawn</button>
+            </div>
+        </div>
+        <a href="{{ url_for('edit_application', id=app.id) }}" class="btn btn-secondary">
+            <i data-lucide="edit"></i>
+            Edit
+        </a>
+        <form action="{{ url_for('delete_application', id=app.id) }}" method="POST" class="delete-form" 
+              onsubmit="return confirm('Are you sure you want to delete this application?');">
+            <button type="submit" class="btn btn-danger">
+                <i data-lucide="trash-2"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="view-grid">
+    <!-- Main Info Column -->
+    <div class="view-main">
+        <!-- Position Details Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Position Details</h2>
+            </div>
+            <div class="card-body">
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Position Level</span>
+                        <span class="detail-value">{{ app.position_level }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Job Type</span>
+                        <span class="detail-value">{{ app.job_type }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Work Mode</span>
+                        <span class="detail-value">
+                            <i data-lucide="{% if app.work_mode == 'Remote' %}home{% elif app.work_mode == 'Hybrid' %}building{% else %}building-2{% endif %}"></i>
+                            {{ app.work_mode }}
+                        </span>
+                    </div>
+                    {% if app.location %}
+                    <div class="detail-item">
+                        <span class="detail-label">Location</span>
+                        <span class="detail-value">
+                            <i data-lucide="map-pin"></i>
+                            {{ app.location }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    {% if app.salary_range %}
+                    <div class="detail-item">
+                        <span class="detail-label">Salary Range</span>
+                        <span class="detail-value">{{ app.salary_range }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if app.job_posting_url %}
+                <a href="{{ app.job_posting_url }}" target="_blank" class="btn btn-secondary btn-sm mt-4">
+                    <i data-lucide="external-link"></i>
+                    View Job Posting
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Requirements Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Requirements</h2>
+            </div>
+            <div class="card-body">
+                {% if app.requirements %}
+                <div class="requirements-text">{{ app.requirements }}</div>
+                {% else %}
+                <p class="text-muted">No requirements listed</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Updates Timeline Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Updates & Timeline</h2>
+            </div>
+            <div class="card-body">
+                <!-- Add Update Form -->
+                <form method="POST" action="{{ url_for('add_update', id=app.id) }}" class="add-update-form">
+                    <div class="form-row">
+                        <div class="form-group flex-grow">
+                            <input type="text" name="title" required placeholder="Update title (e.g., Phone screen scheduled)">
+                        </div>
+                        <div class="form-group">
+                            <select name="update_type">
+                                <option value="note">Note</option>
+                                <option value="interview">Interview</option>
+                                <option value="follow-up">Follow-up</option>
+                                <option value="offer">Offer</option>
+                                <option value="rejection">Rejection</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <textarea name="content" rows="2" placeholder="Details (optional)"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i data-lucide="plus"></i>
+                        Add Update
+                    </button>
+                </form>
+                
+                <!-- Timeline -->
+                {% if app.updates %}
+                <div class="timeline">
+                    {% for update in app.updates %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker {{ update.update_type }}"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-header">
+                                <span class="timeline-title">{{ update.title }}</span>
+                                <span class="timeline-type">{{ update.update_type }}</span>
+                                <form action="{{ url_for('delete_update', id=update.id) }}" method="POST" class="inline-form">
+                                    <button type="submit" class="btn-icon-sm" title="Delete">
+                                        <i data-lucide="x"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            {% if update.content %}
+                            <p class="timeline-text">{{ update.content }}</p>
+                            {% endif %}
+                            <span class="timeline-date">{{ update.created_at.strftime('%b %d, %Y at %I:%M %p') }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted mt-4">No updates yet. Add your first update above!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="view-sidebar">
+        <!-- Key Dates Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Key Dates</h2>
+            </div>
+            <div class="card-body">
+                <div class="dates-list">
+                    {% if app.deadline %}
+                    <div class="date-item {% if app.deadline < today %}overdue{% endif %}">
+                        <i data-lucide="clock"></i>
+                        <div>
+                            <span class="date-label">Deadline</span>
+                            <span class="date-value">{{ app.deadline.strftime('%B %d, %Y') }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if app.date_applied %}
+                    <div class="date-item">
+                        <i data-lucide="send"></i>
+                        <div>
+                            <span class="date-label">Applied</span>
+                            <span class="date-value">{{ app.date_applied.strftime('%B %d, %Y') }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="date-item">
+                        <i data-lucide="plus-circle"></i>
+                        <div>
+                            <span class="date-label">Added</span>
+                            <span class="date-value">{{ app.created_at.strftime('%B %d, %Y') }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tags Card -->
+        {% if app.tags %}
+        <div class="card">
+            <div class="card-header">
+                <h2>Tags</h2>
+            </div>
+            <div class="card-body">
+                <div class="tags-list">
+                    {% for tag in app.get_tags_list() %}
+                    <span class="tag">{{ tag }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Contacts Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2>People to Connect</h2>
+            </div>
+            <div class="card-body">
+                <!-- Add Contact Form -->
+                <details class="add-contact-details">
+                    <summary class="btn btn-secondary btn-sm">
+                        <i data-lucide="user-plus"></i>
+                        Add Contact
+                    </summary>
+                    <form method="POST" action="{{ url_for('add_contact', id=app.id) }}" class="add-contact-form">
+                        <div class="form-group">
+                            <input type="text" name="name" required placeholder="Name *">
+                        </div>
+                        <div class="form-group">
+                            <input type="text" name="title" placeholder="Their job title">
+                        </div>
+                        <div class="form-group">
+                            <input type="email" name="email" placeholder="Email">
+                        </div>
+                        <div class="form-group">
+                            <input type="url" name="linkedin_url" placeholder="LinkedIn URL">
+                        </div>
+                        <div class="form-group">
+                            <textarea name="notes" rows="2" placeholder="Notes"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">Save Contact</button>
+                    </form>
+                </details>
+                
+                <!-- Contacts List -->
+                {% if app.contacts %}
+                <ul class="contacts-list">
+                    {% for contact in app.contacts %}
+                    <li class="contact-item {% if contact.contacted %}contacted{% endif %}">
+                        <div class="contact-main">
+                            <div class="contact-avatar">
+                                {{ contact.name[0].upper() }}
+                            </div>
+                            <div class="contact-info">
+                                <span class="contact-name">{{ contact.name }}</span>
+                                {% if contact.title %}
+                                <span class="contact-title">{{ contact.title }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="contact-actions">
+                            {% if contact.linkedin_url %}
+                            <a href="{{ contact.linkedin_url }}" target="_blank" class="btn-icon" title="LinkedIn">
+                                <i data-lucide="linkedin"></i>
+                            </a>
+                            {% endif %}
+                            {% if contact.email %}
+                            <a href="mailto:{{ contact.email }}" class="btn-icon" title="Email">
+                                <i data-lucide="mail"></i>
+                            </a>
+                            {% endif %}
+                            <button class="btn-icon {% if contact.contacted %}active{% endif %}" 
+                                    onclick="toggleContact({{ contact.id }})" 
+                                    title="{% if contact.contacted %}Contacted{% else %}Mark as contacted{% endif %}">
+                                <i data-lucide="check-circle"></i>
+                            </button>
+                            <form action="{{ url_for('delete_contact', id=contact.id) }}" method="POST" class="inline-form">
+                                <button type="submit" class="btn-icon" title="Remove">
+                                    <i data-lucide="x"></i>
+                                </button>
+                            </form>
+                        </div>
+                        {% if contact.notes %}
+                        <p class="contact-notes">{{ contact.notes }}</p>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mt-3">No contacts added yet</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Notes Card -->
+        {% if app.notes %}
+        <div class="card">
+            <div class="card-header">
+                <h2>Notes</h2>
+            </div>
+            <div class="card-body">
+                <p class="notes-text">{{ app.notes }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const today = new Date();
+    
+    function toggleStatusMenu(button) {
+        const menu = button.nextElementSibling;
+        menu.classList.toggle('show');
+    }
+    
+    function updateStatus(appId, status) {
+        fetch(`/application/${appId}/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: status })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) location.reload();
+        });
+    }
+    
+    function toggleContact(contactId) {
+        fetch(`/contact/${contactId}/toggle`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) location.reload();
+        });
+    }
+    
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.status-dropdown')) {
+            document.querySelectorAll('.status-menu').forEach(m => m.classList.remove('show'));
+        }
+    });
+</script>
+{% endblock %}

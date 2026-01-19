@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}All Applications - Internship Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Applications</h1>
+        <p class="subtitle">{{ applications|length }} total applications</p>
+    </div>
+    <a href="{{ url_for('add_application') }}" class="btn btn-primary">
+        <i data-lucide="plus"></i>
+        Add Application
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="filters-bar">
+    <form class="filters-form" method="GET">
+        <div class="search-box">
+            <i data-lucide="search"></i>
+            <input type="text" name="search" placeholder="Search company or title..." 
+                   value="{{ search_query }}">
+        </div>
+        
+        <select name="status" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Status</option>
+            <option value="saved" {% if status_filter == 'saved' %}selected{% endif %}>Saved</option>
+            <option value="applied" {% if status_filter == 'applied' %}selected{% endif %}>Applied</option>
+            <option value="interviewing" {% if status_filter == 'interviewing' %}selected{% endif %}>Interviewing</option>
+            <option value="offer" {% if status_filter == 'offer' %}selected{% endif %}>Offer</option>
+            <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+            <option value="withdrawn" {% if status_filter == 'withdrawn' %}selected{% endif %}>Withdrawn</option>
+        </select>
+        
+        <select name="sort" class="filter-select" onchange="this.form.submit()">
+            <option value="updated_at" {% if sort_by == 'updated_at' %}selected{% endif %}>Last Updated</option>
+            <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>Date Added</option>
+            <option value="company" {% if sort_by == 'company' %}selected{% endif %}>Company</option>
+            <option value="deadline" {% if sort_by == 'deadline' %}selected{% endif %}>Deadline</option>
+        </select>
+        
+        <button type="submit" class="btn btn-secondary btn-sm">
+            <i data-lucide="filter"></i>
+            Filter
+        </button>
+        
+        {% if search_query or status_filter %}
+        <a href="{{ url_for('applications') }}" class="btn btn-ghost btn-sm">
+            <i data-lucide="x"></i>
+            Clear
+        </a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Applications Grid -->
+{% if applications %}
+<div class="applications-grid">
+    {% for app in applications %}
+    <div class="app-card" data-status="{{ app.status }}">
+        <div class="app-card-header">
+            <div class="app-company">
+                <h3>{{ app.company }}</h3>
+                {% if app.location %}
+                <span class="app-location">
+                    <i data-lucide="map-pin"></i>
+                    {{ app.location }}
+                </span>
+                {% endif %}
+            </div>
+            <div class="status-dropdown">
+                <button class="status-badge status-{{ app.status }}" onclick="toggleStatusMenu(this)">
+                    {{ app.status }}
+                    <i data-lucide="chevron-down"></i>
+                </button>
+                <div class="status-menu">
+                    <button onclick="updateStatus({{ app.id }}, 'saved')">Saved</button>
+                    <button onclick="updateStatus({{ app.id }}, 'applied')">Applied</button>
+                    <button onclick="updateStatus({{ app.id }}, 'interviewing')">Interviewing</button>
+                    <button onclick="updateStatus({{ app.id }}, 'offer')">Offer</button>
+                    <button onclick="updateStatus({{ app.id }}, 'rejected')">Rejected</button>
+                    <button onclick="updateStatus({{ app.id }}, 'withdrawn')">Withdrawn</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="app-card-body">
+            <h4 class="app-title">{{ app.job_title }}</h4>
+            
+            <div class="app-meta">
+                <span class="meta-item">
+                    <i data-lucide="briefcase"></i>
+                    {{ app.position_level }}
+                </span>
+                <span class="meta-item">
+                    <i data-lucide="{% if app.work_mode == 'Remote' %}home{% elif app.work_mode == 'Hybrid' %}building{% else %}building-2{% endif %}"></i>
+                    {{ app.work_mode }}
+                </span>
+            </div>
+            
+            {% if app.tags %}
+            <div class="app-tags">
+                {% for tag in app.get_tags_list()[:3] %}
+                <span class="tag">{{ tag }}</span>
+                {% endfor %}
+                {% if app.get_tags_list()|length > 3 %}
+                <span class="tag tag-more">+{{ app.get_tags_list()|length - 3 }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="app-card-footer">
+            <div class="app-dates">
+                {% if app.deadline %}
+                <span class="date-item {% if app.deadline < today %}overdue{% endif %}">
+                    <i data-lucide="clock"></i>
+                    Due {{ app.deadline.strftime('%b %d') }}
+                </span>
+                {% endif %}
+                {% if app.date_applied %}
+                <span class="date-item">
+                    <i data-lucide="send"></i>
+                    Applied {{ app.date_applied.strftime('%b %d') }}
+                </span>
+                {% endif %}
+            </div>
+            
+            <a href="{{ url_for('view_application', id=app.id) }}" class="btn btn-ghost btn-sm">
+                View
+                <i data-lucide="arrow-right"></i>
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state-large">
+    <i data-lucide="folder-open"></i>
+    <h3>No applications found</h3>
+    <p>{% if search_query or status_filter %}Try adjusting your filters{% else %}Start by adding your first application{% endif %}</p>
+    {% if not search_query and not status_filter %}
+    <a href="{{ url_for('add_application') }}" class="btn btn-primary">
+        <i data-lucide="plus"></i>
+        Add Application
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Pass today's date to JS
+    const today = new Date('{{ now if now else "" }}');
+    
+    function toggleStatusMenu(button) {
+        const menu = button.nextElementSibling;
+        const allMenus = document.querySelectorAll('.status-menu');
+        
+        // Close all other menus
+        allMenus.forEach(m => {
+            if (m !== menu) m.classList.remove('show');
+        });
+        
+        menu.classList.toggle('show');
+    }
+    
+    function updateStatus(appId, status) {
+        fetch(`/application/${appId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: status })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+    
+    // Close menus when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.status-dropdown')) {
+            document.querySelectorAll('.status-menu').forEach(m => m.classList.remove('show'));
+        }
+    });
+</script>
+{% endblock %}

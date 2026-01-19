@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Internship Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Dashboard</h1>
+        <p class="subtitle">Track your internship application journey</p>
+    </div>
+    <a href="{{ url_for('add_application') }}" class="btn btn-primary">
+        <i data-lucide="plus"></i>
+        Add Application
+    </a>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon total">
+            <i data-lucide="layers"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ stats.total }}</span>
+            <span class="stat-label">Total Applications</span>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon saved">
+            <i data-lucide="bookmark"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ stats.saved }}</span>
+            <span class="stat-label">Saved</span>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon applied">
+            <i data-lucide="send"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ stats.applied }}</span>
+            <span class="stat-label">Applied</span>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon interviewing">
+            <i data-lucide="message-circle"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ stats.interviewing }}</span>
+            <span class="stat-label">Interviewing</span>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon offer">
+            <i data-lucide="trophy"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ stats.offers }}</span>
+            <span class="stat-label">Offers</span>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon rejected">
+            <i data-lucide="x-circle"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ stats.rejected }}</span>
+            <span class="stat-label">Rejected</span>
+        </div>
+    </div>
+</div>
+
+<!-- Charts and Recent Activity -->
+<div class="dashboard-grid">
+    <!-- Status Chart -->
+    <div class="card chart-card">
+        <div class="card-header">
+            <h2>Application Status</h2>
+        </div>
+        <div class="card-body">
+            <div class="chart-container">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Response Rate -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Response Rate</h2>
+        </div>
+        <div class="card-body">
+            <div class="response-rate">
+                <div class="rate-circle">
+                    <svg viewBox="0 0 100 100">
+                        <circle class="rate-bg" cx="50" cy="50" r="45"/>
+                        <circle class="rate-progress" cx="50" cy="50" r="45" 
+                                style="stroke-dasharray: {{ stats.response_rate * 2.83 }}, 283"/>
+                    </svg>
+                    <span class="rate-value">{{ stats.response_rate }}%</span>
+                </div>
+                <p class="rate-desc">of applications received a response</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Applications -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Recent Activity</h2>
+            <a href="{{ url_for('applications') }}" class="link-small">View All</a>
+        </div>
+        <div class="card-body">
+            {% if recent %}
+                <ul class="activity-list">
+                    {% for app in recent %}
+                    <li class="activity-item">
+                        <a href="{{ url_for('view_application', id=app.id) }}">
+                            <div class="activity-main">
+                                <span class="activity-company">{{ app.company }}</span>
+                                <span class="activity-title">{{ app.job_title }}</span>
+                            </div>
+                            <span class="status-badge status-{{ app.status }}">{{ app.status }}</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="empty-state">
+                    <i data-lucide="inbox"></i>
+                    <p>No applications yet</p>
+                    <a href="{{ url_for('add_application') }}" class="btn btn-secondary btn-sm">Add your first</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Upcoming Deadlines -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Upcoming Deadlines</h2>
+        </div>
+        <div class="card-body">
+            {% if upcoming_deadlines %}
+                <ul class="deadline-list">
+                    {% for app in upcoming_deadlines %}
+                    <li class="deadline-item">
+                        <a href="{{ url_for('view_application', id=app.id) }}">
+                            <div class="deadline-date">
+                                <span class="deadline-day">{{ app.deadline.strftime('%d') }}</span>
+                                <span class="deadline-month">{{ app.deadline.strftime('%b') }}</span>
+                            </div>
+                            <div class="deadline-info">
+                                <span class="deadline-company">{{ app.company }}</span>
+                                <span class="deadline-title">{{ app.job_title }}</span>
+                            </div>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="empty-state">
+                    <i data-lucide="calendar"></i>
+                    <p>No upcoming deadlines</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Status Distribution Chart
+    const ctx = document.getElementById('statusChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Saved', 'Applied', 'Interviewing', 'Offers', 'Rejected'],
+            datasets: [{
+                data: [
+                    {{ stats.saved }}, 
+                    {{ stats.applied }}, 
+                    {{ stats.interviewing }}, 
+                    {{ stats.offers }}, 
+                    {{ stats.rejected }}
+                ],
+                backgroundColor: [
+                    '#6366f1',
+                    '#f59e0b',
+                    '#06b6d4',
+                    '#10b981',
+                    '#ef4444'
+                ],
+                borderWidth: 0,
+                spacing: 4,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        font: {
+                            family: "'DM Sans', sans-serif",
+                            size: 12
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
