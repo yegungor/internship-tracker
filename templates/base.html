@@ -8,7 +8,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -16,7 +16,8 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Theme CSS - ID allows JavaScript to change it -->
+    <link id="theme-css" rel="stylesheet" href="{{ url_for('static', filename='css/style-default.css') }}">
 </head>
 <body>
     <!-- Sidebar Navigation -->
@@ -54,6 +55,25 @@
                 </a>
             </li>
         </ul>
+        
+        <!-- Theme Switcher -->
+        <div class="theme-switcher">
+            <div class="theme-label">Theme</div>
+            <div class="theme-buttons">
+                <button class="theme-btn" data-theme="style-default" title="Dark">
+                    <i data-lucide="moon"></i>
+                </button>
+                <button class="theme-btn" data-theme="style-glass" title="Glass">
+                    <i data-lucide="sparkles"></i>
+                </button>
+                <button class="theme-btn" data-theme="style-minimal" title="Light">
+                    <i data-lucide="sun"></i>
+                </button>
+                <button class="theme-btn" data-theme="style-retro" title="Retro">
+                    <i data-lucide="gamepad-2"></i>
+                </button>
+            </div>
+        </div>
         
         <div class="sidebar-footer">
             <div class="version">v1.0.0</div>

@@ -6,6 +6,9 @@ document.addEventListener('DOMContentLoaded', function() {
         lucide.createIcons();
     }
     
+    // Load saved theme on page load
+    loadTheme();
+    
     // Auto-hide flash messages after 5 seconds
     const flashMessages = document.querySelectorAll('.flash-message');
     flashMessages.forEach(message => {
@@ -35,7 +38,59 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
+    // Theme switcher buttons
+    const themeButtons = document.querySelectorAll('.theme-btn');
+    themeButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const theme = this.dataset.theme;
+            setTheme(theme);
+        });
+    });
 });
+
+// ============ THEME FUNCTIONS ============
+
+function setTheme(themeName) {
+    // Update the CSS file
+    const themeLink = document.getElementById('theme-css');
+    themeLink.href = `/static/css/${themeName}.css`;
+    
+    // Save to localStorage
+    localStorage.setItem('theme', themeName);
+    
+    // Update active button
+    updateActiveThemeButton(themeName);
+}
+
+function loadTheme() {
+    // Get saved theme or use default
+    const savedTheme = localStorage.getItem('theme') || 'style-default';
+    
+    // Apply the theme
+    const themeLink = document.getElementById('theme-css');
+    if (themeLink) {
+        themeLink.href = `/static/css/${savedTheme}.css`;
+    }
+    
+    // Update active button
+    updateActiveThemeButton(savedTheme);
+}
+
+function updateActiveThemeButton(themeName) {
+    // Remove active class from all buttons
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Add active class to current theme button
+    const activeBtn = document.querySelector(`.theme-btn[data-theme="${themeName}"]`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
+}
+
+// ============ STATUS FUNCTIONS ============
 
 // Global function to toggle status menus
 function toggleStatusMenu(button) {

@@ -113,6 +113,15 @@ internship-tracker/
 - Filter by status using the dropdown
 - Sort by date, company, or deadline
 
+### Switching Themes
+Click the theme buttons in the sidebar to change the look:
+- **Dark** — Default purple dark theme
+- **Glass** — Frosted glassmorphism effect
+- **Light** — Clean minimalist light theme
+- **Retro** — Pixel art arcade style
+
+Your preference is saved automatically.
+
 ## Tools Implemented
 
 - **Backend**: Flask (Python)
