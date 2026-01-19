@@ -29,45 +29,54 @@ A modern web application to track and manage your internship and job application
 ### Prerequisites
 - Python 3.8 or higher
 - pip (Python package manager)
+- Git
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yegungor/internship-tracker.git
-   cd ~/Downloads/internship-tracker       # Change this to wherever you downloaded/extracted the project
-   ```
+**1. Clone the repository**
+```bash
+git clone https://github.com/yegungor/internship-tracker.git
+cd ~/Downloads/internship-tracker       # Change this to wherever you downloaded/extracted the project
+```
 
-2. **Create a virtual environment**
-   ```bash
-   python3 -m venv venv #For macOS, python3.
-   
-   # On Windows
-   venv\Scripts\activate
-   
-   # On macOS/Linux
-   source venv/bin/activate
-   ```
+**2. Run the setup script**
 
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+Mac/Linux:
+```bash
+chmod +x setup.sh    # Make it executable (first time only)
+./setup.sh
+```
 
-4. **Run the application**
-   ```bash
-   python app.py
-   ```
+Windows:
+```bash
+setup.bat
+```
 
-5. **Open your browser**
-   ```
-   http://127.0.0.1:1453
-   ```
+**3. Start the app**
+
+Mac/Linux:
+```bash
+./run.sh
+```
+
+Windows:
+```bash
+run.bat
+```
+
+**4. Open your browser**
+```
+http://127.0.0.1:1453
+```
 
 ## Project Structure
 
 ```
 internship-tracker/
+├── setup.sh                   # Script
+├── run.sh                     # Script
+├── setup.bat                  # Script
+├── run.bat                    # Script
 ├── app.py                     # Main Flask application
 ├── models.py                  # Database models
 ├── requirements.txt           # Python dependencies
