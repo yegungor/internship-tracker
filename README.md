@@ -5,6 +5,16 @@ A modern web application to track and manage your internship and job application
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
 ![Flask](https://img.shields.io/badge/Flask-3.0+-green.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
+## Demo
+
+### Dashboard
+![Dashboard](demo_gif/view_applications.gif)
+
+### Adding an Application
+![Add](demo_gif/add_application.gif)
+
+### Theme Switching
+![Themes](demo_gif/themes.gif)
 
 ## Features
 
