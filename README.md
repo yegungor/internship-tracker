@@ -8,7 +8,7 @@ A modern web application to track and manage your internship and job application
 ## Demo
 
 ### Dashboard
-![Dashboard](demo_gif/view_applications.gif)
+![Dashboard](demo_gif/view_application.gif)
 
 ### Adding an Application
 ![Add](demo_gif/add_application.gif)
