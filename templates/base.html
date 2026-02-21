@@ -49,6 +49,18 @@
                 </a>
             </li>
             <li>
+                <a href="{{ url_for('analysis') }}" class="{% if request.endpoint == 'analysis' %}active{% endif %}">
+                    <i data-lucide="scan-search"></i>
+                    <span>Analysis</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('analysis_history') }}" class="{% if request.endpoint in ['analysis_history', 'view_analysis'] %}active{% endif %}">
+                    <i data-lucide="history"></i>
+                    <span>History</span>
+                </a>
+            </li>
+            <li>
                 <a href="{{ url_for('export_csv') }}">
                     <i data-lucide="download"></i>
                     <span>Export CSV</span>

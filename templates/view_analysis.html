@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Details - Internship Tracker{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('analysis_history') }}" class="back-link">
+    <i data-lucide="arrow-left"></i>
+    Back to History
+</a>
+
+<div class="page-header">
+    <div>
+        <h1>{{ analysis.resume_name }}</h1>
+        <p class="subtitle">
+            {{ analysis.created_at.strftime('%B %d, %Y at %H:%M') }}
+            <span class="analysis-type-badge {{ analysis.analysis_type }}">
+                {{ 'AI Analysis' if analysis.analysis_type == 'llm' else 'ATS Analysis' }}
+            </span>
+        </p>
+    </div>
+    <form action="{{ url_for('delete_analysis', id=analysis.id) }}" method="POST" onsubmit="return confirm('Delete this analysis?')">
+        <button type="submit" class="btn btn-danger">
+            <i data-lucide="trash-2"></i>
+            Delete
+        </button>
+    </form>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+    <div class="stat-card">
+        <div class="stat-icon total">
+            <i data-lucide="briefcase"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ analysis.jobs_analyzed }}</span>
+            <span class="stat-label">Jobs Analyzed</span>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon offer">
+            <i data-lucide="target"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ analysis.avg_match_score }}%</span>
+            <span class="stat-label">Avg Match Score</span>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon applied">
+            <i data-lucide="check-circle"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ analysis.total_skills_matched }}</span>
+            <span class="stat-label">Skills Matched</span>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon rejected">
+            <i data-lucide="alert-circle"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ analysis.total_skills_missing }}</span>
+            <span class="stat-label">Skills Missing</span>
+        </div>
+    </div>
+</div>
+
+{% if analysis.best_match_company %}
+<!-- Best Match -->
+<div class="card mt-4 best-match-card">
+    <div class="card-header">
+        <h2><i data-lucide="trophy"></i> Best Match</h2>
+    </div>
+    <div class="card-body">
+        <div class="best-match-info">
+            <h3>{{ analysis.best_match_company }} - {{ analysis.best_match_title }}</h3>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if analysis.overall_summary %}
+<!-- Summary (LLM) -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h2><i data-lucide="sparkles"></i> AI Summary</h2>
+    </div>
+    <div class="card-body">
+        <p class="llm-summary-text">{{ analysis.overall_summary }}</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Full Results -->
+{% if results %}
+<div class="mt-4">
+    {% if analysis.analysis_type == 'llm' and results.analysis %}
+        {% set llm = results.analysis %}
+        
+        {% if llm.resume_strengths or llm.resume_weaknesses %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2>Strengths & Areas to Improve</h2>
+            </div>
+            <div class="card-body">
+                <div class="strengths-weaknesses">
+                    <div class="sw-column">
+                        <h4><i data-lucide="thumbs-up"></i> Strengths</h4>
+                        <ul>
+                            {% for s in llm.resume_strengths %}
+                            <li><i data-lucide="check-circle"></i> {{ s }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="sw-column">
+                        <h4><i data-lucide="alert-triangle"></i> Areas to Improve</h4>
+                        <ul>
+                            {% for w in llm.resume_weaknesses %}
+                            <li><i data-lucide="alert-circle"></i> {{ w }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if llm.general_recommendations %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2><i data-lucide="lightbulb"></i> Recommendations</h2>
+            </div>
+            <div class="card-body">
+                <ul class="recommendations-list">
+                    {% for r in llm.general_recommendations %}
+                    <li><i data-lucide="lightbulb"></i> {{ r }}</li>
+                    {% endfor %}
+                </ul>
+                
+                {% if llm.skills_to_learn %}
+                <div class="skills-to-learn mt-4">
+                    <h4>Priority Skills to Learn:</h4>
+                    <div class="tags-list">
+                        {% for s in llm.skills_to_learn %}
+                        <span class="tag tag-warning"><i data-lucide="plus" style="width:12px;height:12px;"></i> {{ s }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if llm.job_analyses %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2><i data-lucide="file-search"></i> Job Analysis Details</h2>
+            </div>
+            <div class="card-body">
+                {% for job in llm.job_analyses %}
+                <div class="job-analysis-card">
+                    <div class="job-analysis-header">
+                        <div class="job-analysis-title">
+                            <h4>{{ job.company }}</h4>
+                            <span>{{ job.job_title }}</span>
+                        </div>
+                        <div class="match-score {{ 'score-high' if job.match_score >= 70 else 'score-medium' if job.match_score >= 40 else 'score-low' }}">
+                            {{ job.match_score }}%
+                            <span class="match-level">{{ job.match_level }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="job-analysis-body">
+                        {% if job.key_insight %}
+                        <div class="job-analysis-insight">
+                            <i data-lucide="sparkles"></i>
+                            <p>{{ job.key_insight }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="job-analysis-skills">
+                            <div class="skill-group">
+                                <h5><i data-lucide="check"></i> Matched Skills</h5>
+                                <div class="tags-list">
+                                    {% for s in job.matched_skills %}
+                                    <span class="tag tag-success">{{ s }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            {% if job.transferable_skills %}
+                            <div class="skill-group">
+                                <h5><i data-lucide="zap"></i> Transferable Skills</h5>
+                                <div class="tags-list">
+                                    {% for s in job.transferable_skills %}
+                                    <span class="tag tag-info">{{ s }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="skill-group">
+                                <h5><i data-lucide="plus-circle"></i> Missing Skills</h5>
+                                <div class="tags-list">
+                                    {% for s in job.missing_skills %}
+                                    <span class="tag tag-warning">{{ s }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if job.recommendations %}
+                        <div class="job-analysis-rec">
+                            <h5><i data-lucide="message-circle"></i> Recommendation</h5>
+                            <p>{{ job.recommendations }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    
+    {% else %}
+        <!-- ATS Results -->
+        {% if results.matched_skills %}
+        <div class="dashboard-grid mt-4">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Matched Skills</h2>
+                </div>
+                <div class="card-body">
+                    <div class="tags-list">
+                        {% for s in results.matched_skills %}
+                        <span class="tag tag-success"><i data-lucide="check" style="width:12px;height:12px;"></i> {{ s }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2>Missing Skills</h2>
+                </div>
+                <div class="card-body">
+                    <div class="tags-list">
+                        {% for s in results.missing_skills %}
+                        <span class="tag tag-warning"><i data-lucide="plus" style="width:12px;height:12px;"></i> {{ s }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if results.job_results %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2>Match by Position</h2>
+            </div>
+            <div class="card-body">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Company</th>
+                            <th>Position</th>
+                            <th>Match Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in results.job_results %}
+                        <tr>
+                            <td>{{ job.company }}</td>
+                            <td>{{ job.job_title }}</td>
+                            <td>
+                                <div class="match-score {{ 'score-high' if job.match_score >= 70 else 'score-medium' if job.match_score >= 40 else 'score-low' }}">
+                                    {{ job.match_score }}%
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

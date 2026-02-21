@@ -1,0 +1,834 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis - Internship Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Resume Analysis</h1>
+        <p class="subtitle">Analyze how well your resume matches saved positions</p>
+    </div>
+</div>
+
+<!-- Upload Section -->
+<div class="form-grid">
+    <div class="form-section">
+        <h3 class="section-title">
+            <i data-lucide="file-text"></i>
+            Upload Resume
+        </h3>
+        <form id="resume-upload-form" enctype="multipart/form-data">
+            <div class="upload-area" id="resume-drop-zone">
+                <i data-lucide="upload-cloud"></i>
+                <p>Drag & drop your resume here</p>
+                <p class="text-muted">or click to browse (PDF only)</p>
+                <input type="file" id="resume-file" name="resume" accept=".pdf" hidden>
+            </div>
+            <div id="resume-file-name" class="file-name-display"></div>
+        </form>
+    </div>
+
+    <div class="form-section">
+        <h3 class="section-title">
+            <i data-lucide="mail"></i>
+            Upload Cover Letter (Optional)
+        </h3>
+        <form id="cover-letter-upload-form" enctype="multipart/form-data">
+            <div class="upload-area" id="cover-letter-drop-zone">
+                <i data-lucide="upload-cloud"></i>
+                <p>Drag & drop your cover letter here</p>
+                <p class="text-muted">or click to browse (PDF only)</p>
+                <input type="file" id="cover-letter-file" name="cover_letter" accept=".pdf" hidden>
+            </div>
+            <div id="cover-letter-file-name" class="file-name-display"></div>
+        </form>
+    </div>
+</div>
+
+<!-- Analysis Options -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h2>Analysis Options</h2>
+    </div>
+    <div class="card-body">
+        <div class="analysis-options">
+            <div class="form-group">
+                <label for="status-filter">Filter by status:</label>
+                <select id="status-filter" class="filter-select">
+                    <option value="all">All Applications</option>
+                    <option value="saved" selected>Saved</option>
+                    <option value="applied">Applied</option>
+                    <option value="interviewing">Interviewing</option>
+                    <option value="offer">Offers</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </div>
+            
+            <div class="analysis-type-selector">
+                <label>Analysis Type:</label>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary active" data-type="ats">
+                        <i data-lucide="scan"></i>
+                        ATS Keyword Match (Free)
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-type="llm" disabled title="Coming soon">
+                        <i data-lucide="sparkles"></i>
+                        AI Deep Analysis (API Key)
+                    </button>
+                </div>
+            </div>
+            
+            <button id="run-analysis-btn" class="btn btn-primary" disabled>
+                <i data-lucide="play"></i>
+                Run Analysis
+            </button>
+        </div>
+        
+        <!-- Job Selection -->
+        <div class="job-selection mt-4">
+            <div class="job-selection-header">
+                <label>Select specific jobs to analyze:</label>
+                <div class="selection-actions">
+                    <button type="button" class="btn btn-sm btn-ghost" id="select-all-btn">Select All</button>
+                    <button type="button" class="btn btn-sm btn-ghost" id="deselect-all-btn">Deselect All</button>
+                </div>
+            </div>
+            <div class="job-checkboxes" id="job-checkboxes">
+                <!-- Filled dynamically -->
+                <p class="text-muted">Loading jobs...</p>
+            </div>
+            <p class="selected-count"><span id="selected-job-count">0</span> jobs selected</p>
+        </div>
+    </div>
+</div>
+
+<!-- Results Section (hidden until analysis runs) -->
+<div id="analysis-results" class="mt-4" style="display: none;">
+    
+    <!-- Save Analysis Button -->
+    <div class="save-analysis-section" id="save-section">
+        <button id="save-analysis-btn" class="btn btn-primary">
+            <i data-lucide="save"></i>
+            Save Analysis to History
+        </button>
+    </div>
+    
+    <!-- Overall Stats -->
+    <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="stat-card">
+            <div class="stat-icon total">
+                <i data-lucide="briefcase"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value" id="jobs-analyzed">0</span>
+                <span class="stat-label">Jobs Analyzed</span>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon offer">
+                <i data-lucide="target"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value" id="avg-match">0%</span>
+                <span class="stat-label">Avg Match Score</span>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon applied">
+                <i data-lucide="check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value" id="skills-matched">0</span>
+                <span class="stat-label">Skills Matched</span>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon rejected">
+                <i data-lucide="alert-circle"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value" id="skills-missing">0</span>
+                <span class="stat-label">Skills to Add</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- LLM Results Section (shown only for LLM analysis) -->
+    <div id="llm-results" style="display: none;">
+        <!-- Best Match Highlight -->
+        <div class="card mt-4 best-match-card">
+            <div class="card-header">
+                <h2><i data-lucide="trophy"></i> Best Match</h2>
+            </div>
+            <div class="card-body">
+                <div id="best-match-content"></div>
+            </div>
+        </div>
+        
+        <!-- Overall Summary -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2><i data-lucide="sparkles"></i> AI Analysis Summary</h2>
+            </div>
+            <div class="card-body">
+                <p id="llm-summary" class="llm-summary-text"></p>
+                
+                <div class="strengths-weaknesses">
+                    <div class="sw-column">
+                        <h4><i data-lucide="thumbs-up"></i> Resume Strengths</h4>
+                        <ul id="resume-strengths"></ul>
+                    </div>
+                    <div class="sw-column">
+                        <h4><i data-lucide="alert-triangle"></i> Areas to Improve</h4>
+                        <ul id="resume-weaknesses"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- General Recommendations -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2><i data-lucide="lightbulb"></i> Recommendations</h2>
+            </div>
+            <div class="card-body">
+                <ul id="general-recommendations" class="recommendations-list"></ul>
+                
+                <div class="skills-to-learn mt-4">
+                    <h4>Priority Skills to Learn:</h4>
+                    <div id="skills-to-learn-tags" class="tags-list"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Detailed Job Analysis -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2><i data-lucide="file-search"></i> Detailed Job Analysis</h2>
+            </div>
+            <div class="card-body">
+                <div id="llm-job-analyses"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ATS Results Section (shown only for ATS analysis) -->
+    <div id="ats-results">
+        <!-- Top Skills Section -->
+        <div class="dashboard-grid mt-4">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Most Requested Skills</h2>
+                </div>
+                <div class="card-body">
+                    <div id="top-skills-chart">
+                        <ul class="skills-list" id="top-skills-list">
+                            <!-- Filled by JS -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2>Your Matching Skills</h2>
+                </div>
+                <div class="card-body">
+                    <div id="matched-skills">
+                        <div class="tags-list" id="matched-skills-tags">
+                            <!-- Filled by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Skills Gap -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2>Skills Gap - Consider Adding These</h2>
+            </div>
+            <div class="card-body">
+                <div class="tags-list" id="missing-skills-tags">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Per-Job Results -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2>Match by Position</h2>
+            </div>
+            <div class="card-body">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Company</th>
+                            <th>Position</th>
+                            <th>Match Score</th>
+                            <th>Matched Keywords</th>
+                            <th>Missing Keywords</th>
+                        </tr>
+                    </thead>
+                    <tbody id="job-results-body">
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Most Used Words -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2>Most Common Words in Job Descriptions</h2>
+            </div>
+            <div class="card-body">
+                <div class="word-cloud" id="word-cloud">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="analysis-loading" class="loading-overlay" style="display: none;">
+    <div class="loading-spinner">
+        <i data-lucide="loader-2" class="spin"></i>
+        <p>Analyzing your resume...</p>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // File upload handling
+    const resumeDropZone = document.getElementById('resume-drop-zone');
+    const resumeFileInput = document.getElementById('resume-file');
+    const resumeFileName = document.getElementById('resume-file-name');
+    
+    const coverLetterDropZone = document.getElementById('cover-letter-drop-zone');
+    const coverLetterFileInput = document.getElementById('cover-letter-file');
+    const coverLetterFileName = document.getElementById('cover-letter-file-name');
+    
+    const runAnalysisBtn = document.getElementById('run-analysis-btn');
+    const statusFilter = document.getElementById('status-filter');
+    const jobCheckboxes = document.getElementById('job-checkboxes');
+    const analysisTypeBtns = document.querySelectorAll('.analysis-type-selector .btn');
+    
+    let resumeFile = null;
+    let coverLetterFile = null;
+    let allJobs = [];
+    let analysisType = 'ats';
+    let currentResults = null;  // Store results for saving
+    
+    // Check if LLM is available
+    checkLLMAvailable();
+    
+    // Load jobs on page load
+    loadJobs();
+    
+    // Resume drop zone
+    setupDropZone(resumeDropZone, resumeFileInput, resumeFileName, (file) => {
+        resumeFile = file;
+        checkCanRunAnalysis();
+    });
+    
+    // Cover letter drop zone
+    setupDropZone(coverLetterDropZone, coverLetterFileInput, coverLetterFileName, (file) => {
+        coverLetterFile = file;
+    });
+    
+    // Status filter change
+    statusFilter.addEventListener('change', () => {
+        filterJobCheckboxes();
+    });
+    
+    // Analysis type buttons
+    analysisTypeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.disabled) return;
+            analysisTypeBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            analysisType = btn.dataset.type;
+        });
+    });
+    
+    // Select/Deselect all
+    document.getElementById('select-all-btn').addEventListener('click', () => {
+        document.querySelectorAll('.job-checkbox:not([style*="display: none"]) input').forEach(cb => cb.checked = true);
+        updateSelectedCount();
+        checkCanRunAnalysis();
+    });
+    
+    document.getElementById('deselect-all-btn').addEventListener('click', () => {
+        document.querySelectorAll('.job-checkbox input').forEach(cb => cb.checked = false);
+        updateSelectedCount();
+        checkCanRunAnalysis();
+    });
+    
+    // Save Analysis button
+    document.getElementById('save-analysis-btn').addEventListener('click', saveAnalysis);
+    
+    async function checkLLMAvailable() {
+        try {
+            const response = await fetch('/api/check-llm');
+            const data = await response.json();
+            const llmBtn = document.querySelector('[data-type="llm"]');
+            if (data.available) {
+                llmBtn.disabled = false;
+                llmBtn.title = 'AI-powered semantic analysis';
+            } else {
+                llmBtn.title = data.message;
+            }
+        } catch (error) {
+            console.error('Error checking LLM:', error);
+        }
+    }
+    
+    async function loadJobs() {
+        try {
+            const response = await fetch('/api/jobs');
+            allJobs = await response.json();
+            renderJobCheckboxes();
+        } catch (error) {
+            console.error('Error loading jobs:', error);
+            jobCheckboxes.innerHTML = '<p class="text-muted">Error loading jobs</p>';
+        }
+    }
+    
+    function renderJobCheckboxes() {
+        if (allJobs.length === 0) {
+            jobCheckboxes.innerHTML = '<p class="text-muted">No applications found</p>';
+            return;
+        }
+        
+        jobCheckboxes.innerHTML = allJobs.map(job => `
+            <label class="job-checkbox" data-status="${job.status}">
+                <input type="checkbox" value="${job.id}" checked>
+                <span class="job-checkbox-info">
+                    <strong>${job.company}</strong>
+                    <span>${job.job_title}</span>
+                </span>
+                <span class="status-badge status-${job.status}">${job.status}</span>
+            </label>
+        `).join('');
+        
+        // Add change listeners
+        document.querySelectorAll('.job-checkbox input').forEach(cb => {
+            cb.addEventListener('change', () => {
+                updateSelectedCount();
+                checkCanRunAnalysis();
+            });
+        });
+        
+        filterJobCheckboxes();
+        updateSelectedCount();
+    }
+    
+    function filterJobCheckboxes() {
+        const filter = statusFilter.value;
+        document.querySelectorAll('.job-checkbox').forEach(label => {
+            const status = label.dataset.status;
+            if (filter === 'all' || status === filter) {
+                label.style.display = 'flex';
+                label.querySelector('input').checked = true;
+            } else {
+                label.style.display = 'none';
+                label.querySelector('input').checked = false;
+            }
+        });
+        updateSelectedCount();
+        checkCanRunAnalysis();
+    }
+    
+    function updateSelectedCount() {
+        const count = document.querySelectorAll('.job-checkbox input:checked').length;
+        document.getElementById('selected-job-count').textContent = count;
+    }
+    
+    function getSelectedJobIds() {
+        return Array.from(document.querySelectorAll('.job-checkbox input:checked')).map(cb => cb.value);
+    }
+    
+    function setupDropZone(dropZone, fileInput, fileNameDisplay, onFileSelected) {
+        dropZone.addEventListener('click', () => fileInput.click());
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                handleFile(file, fileNameDisplay, onFileSelected);
+            } else {
+                alert('Please upload a PDF file');
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file, fileNameDisplay, onFileSelected);
+            }
+        });
+    }
+    
+    function handleFile(file, fileNameDisplay, onFileSelected) {
+        fileNameDisplay.innerHTML = `<i data-lucide="file-check"></i> ${file.name}`;
+        lucide.createIcons();
+        onFileSelected(file);
+    }
+    
+    function checkCanRunAnalysis() {
+        const selectedCount = document.querySelectorAll('.job-checkbox input:checked').length;
+        runAnalysisBtn.disabled = !resumeFile || selectedCount === 0;
+    }
+    
+    // Run Analysis
+    runAnalysisBtn.addEventListener('click', async () => {
+        if (!resumeFile) return;
+        
+        const selectedJobIds = getSelectedJobIds();
+        if (selectedJobIds.length === 0) {
+            alert('Please select at least one job to analyze');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('resume', resumeFile);
+        if (coverLetterFile) {
+            formData.append('cover_letter', coverLetterFile);
+        }
+        formData.append('job_ids', JSON.stringify(selectedJobIds));
+        
+        // Show loading
+        const loadingText = analysisType === 'llm' ? 'AI is analyzing your resume...' : 'Analyzing your resume...';
+        document.querySelector('#analysis-loading p').textContent = loadingText;
+        document.getElementById('analysis-loading').style.display = 'flex';
+        document.getElementById('analysis-results').style.display = 'none';
+        
+        // Reset save button
+        const saveBtn = document.getElementById('save-analysis-btn');
+        saveBtn.innerHTML = '<i data-lucide="save"></i> Save Analysis to History';
+        saveBtn.disabled = false;
+        
+        const endpoint = analysisType === 'llm' ? '/api/analyze-llm' : '/api/analyze';
+        
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Store results for saving
+                currentResults = {
+                    data: data,
+                    type: analysisType,
+                    resumeName: resumeFile.name,
+                    coverLetterName: coverLetterFile ? coverLetterFile.name : null,
+                    jobIds: selectedJobIds
+                };
+                
+                if (analysisType === 'llm') {
+                    displayLLMResults(data);
+                } else {
+                    displayATSResults(data);
+                }
+            } else {
+                alert('Analysis failed: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Analysis failed. Please try again.');
+        } finally {
+            document.getElementById('analysis-loading').style.display = 'none';
+        }
+    });
+    
+    async function saveAnalysis() {
+        if (!currentResults) return;
+        
+        const saveBtn = document.getElementById('save-analysis-btn');
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Saving...';
+        lucide.createIcons();
+        
+        const data = currentResults.data;
+        const isLLM = currentResults.type === 'llm';
+        
+        // Prepare save data
+        const saveData = {
+            resume_name: currentResults.resumeName,
+            cover_letter_name: currentResults.coverLetterName,
+            analysis_type: currentResults.type,
+            jobs_analyzed: data.jobs_analyzed,
+            job_ids: currentResults.jobIds.map(id => parseInt(id)),
+            avg_match_score: isLLM 
+                ? (data.analysis.job_analyses ? Math.round(data.analysis.job_analyses.reduce((sum, j) => sum + j.match_score, 0) / data.analysis.job_analyses.length) : 0)
+                : data.avg_match_score,
+            total_skills_matched: isLLM 
+                ? [...new Set(data.analysis.job_analyses?.flatMap(j => j.matched_skills || []) || [])].length
+                : data.total_skills_matched,
+            total_skills_missing: isLLM
+                ? [...new Set(data.analysis.job_analyses?.flatMap(j => j.missing_skills || []) || [])].length
+                : data.total_skills_missing,
+            full_results: data,
+            overall_summary: isLLM ? data.analysis.overall_summary : null,
+            best_match_company: isLLM && data.analysis.strongest_match ? data.analysis.strongest_match.company : null,
+            best_match_title: isLLM && data.analysis.strongest_match ? data.analysis.strongest_match.job_title : null
+        };
+        
+        try {
+            const response = await fetch('/api/save-analysis', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(saveData)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                saveBtn.innerHTML = '<i data-lucide="check-circle"></i> Saved!';
+                saveBtn.classList.add('btn-success');
+                lucide.createIcons();
+            } else {
+                alert('Failed to save: ' + result.error);
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i data-lucide="save"></i> Save Analysis to History';
+                lucide.createIcons();
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to save analysis');
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i data-lucide="save"></i> Save Analysis to History';
+            lucide.createIcons();
+        }
+    }
+    
+    function displayATSResults(data) {
+        document.getElementById('analysis-results').style.display = 'block';
+        document.getElementById('ats-results').style.display = 'block';
+        document.getElementById('llm-results').style.display = 'none';
+        
+        // Update stats
+        document.getElementById('jobs-analyzed').textContent = data.jobs_analyzed;
+        document.getElementById('avg-match').textContent = data.avg_match_score + '%';
+        document.getElementById('skills-matched').textContent = data.total_skills_matched;
+        document.getElementById('skills-missing').textContent = data.total_skills_missing;
+        
+        // Top skills
+        const topSkillsList = document.getElementById('top-skills-list');
+        topSkillsList.innerHTML = '';
+        data.top_skills.forEach(skill => {
+            const li = document.createElement('li');
+            li.className = 'skill-bar-item';
+            li.innerHTML = `
+                <span class="skill-name">${skill.name}</span>
+                <div class="skill-bar">
+                    <div class="skill-bar-fill" style="width: ${skill.percentage}%"></div>
+                </div>
+                <span class="skill-count">${skill.count}</span>
+            `;
+            topSkillsList.appendChild(li);
+        });
+        
+        // Matched skills
+        const matchedSkillsTags = document.getElementById('matched-skills-tags');
+        matchedSkillsTags.innerHTML = '';
+        data.matched_skills.forEach(skill => {
+            const tag = document.createElement('span');
+            tag.className = 'tag tag-success';
+            tag.innerHTML = `<i data-lucide="check" style="width:12px;height:12px;"></i> ${skill}`;
+            matchedSkillsTags.appendChild(tag);
+        });
+        
+        // Missing skills
+        const missingSkillsTags = document.getElementById('missing-skills-tags');
+        missingSkillsTags.innerHTML = '';
+        data.missing_skills.forEach(skill => {
+            const tag = document.createElement('span');
+            tag.className = 'tag tag-warning';
+            tag.innerHTML = `<i data-lucide="plus" style="width:12px;height:12px;"></i> ${skill}`;
+            missingSkillsTags.appendChild(tag);
+        });
+        
+        // Job results table
+        const jobResultsBody = document.getElementById('job-results-body');
+        jobResultsBody.innerHTML = '';
+        data.job_results.forEach(job => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><a href="/application/${job.id}">${job.company}</a></td>
+                <td>${job.job_title}</td>
+                <td>
+                    <div class="match-score ${getScoreClass(job.match_score)}">
+                        ${job.match_score}%
+                    </div>
+                </td>
+                <td>
+                    <div class="keyword-tags">
+                        ${job.matched_keywords.slice(0, 5).map(k => `<span class="tag tag-success">${k}</span>`).join('')}
+                        ${job.matched_keywords.length > 5 ? `<span class="tag tag-more">+${job.matched_keywords.length - 5}</span>` : ''}
+                    </div>
+                </td>
+                <td>
+                    <div class="keyword-tags">
+                        ${job.missing_keywords.slice(0, 5).map(k => `<span class="tag tag-warning">${k}</span>`).join('')}
+                        ${job.missing_keywords.length > 5 ? `<span class="tag tag-more">+${job.missing_keywords.length - 5}</span>` : ''}
+                    </div>
+                </td>
+            `;
+            jobResultsBody.appendChild(tr);
+        });
+        
+        // Word cloud
+        const wordCloud = document.getElementById('word-cloud');
+        wordCloud.innerHTML = '';
+        data.word_frequency.forEach(word => {
+            const span = document.createElement('span');
+            span.className = 'word-cloud-word';
+            span.style.fontSize = `${Math.max(12, Math.min(36, 12 + word.count * 2))}px`;
+            span.style.opacity = Math.max(0.5, Math.min(1, 0.5 + word.count * 0.05));
+            span.textContent = word.word;
+            wordCloud.appendChild(span);
+        });
+        
+        lucide.createIcons();
+    }
+    
+    function displayLLMResults(data) {
+        document.getElementById('analysis-results').style.display = 'block';
+        document.getElementById('ats-results').style.display = 'none';
+        document.getElementById('llm-results').style.display = 'block';
+        
+        const analysis = data.analysis;
+        
+        // Calculate stats from job analyses
+        const jobAnalyses = analysis.job_analyses || [];
+        const avgScore = jobAnalyses.length > 0 
+            ? Math.round(jobAnalyses.reduce((sum, j) => sum + j.match_score, 0) / jobAnalyses.length)
+            : 0;
+        const allMatched = [...new Set(jobAnalyses.flatMap(j => j.matched_skills || []))];
+        const allMissing = [...new Set(jobAnalyses.flatMap(j => j.missing_skills || []))];
+        
+        // Update stats
+        document.getElementById('jobs-analyzed').textContent = data.jobs_analyzed;
+        document.getElementById('avg-match').textContent = avgScore + '%';
+        document.getElementById('skills-matched').textContent = allMatched.length;
+        document.getElementById('skills-missing').textContent = allMissing.length;
+        
+        // Best match
+        if (analysis.strongest_match) {
+            document.getElementById('best-match-content').innerHTML = `
+                <div class="best-match-info">
+                    <h3>${analysis.strongest_match.company} - ${analysis.strongest_match.job_title}</h3>
+                    <p>${analysis.strongest_match.why}</p>
+                </div>
+            `;
+        }
+        
+        // Summary
+        document.getElementById('llm-summary').textContent = analysis.overall_summary || '';
+        
+        // Strengths
+        const strengthsList = document.getElementById('resume-strengths');
+        strengthsList.innerHTML = (analysis.resume_strengths || [])
+            .map(s => `<li><i data-lucide="check-circle"></i> ${s}</li>`).join('');
+        
+        // Weaknesses
+        const weaknessesList = document.getElementById('resume-weaknesses');
+        weaknessesList.innerHTML = (analysis.resume_weaknesses || [])
+            .map(w => `<li><i data-lucide="alert-circle"></i> ${w}</li>`).join('');
+        
+        // General recommendations
+        const recsList = document.getElementById('general-recommendations');
+        recsList.innerHTML = (analysis.general_recommendations || [])
+            .map(r => `<li><i data-lucide="lightbulb"></i> ${r}</li>`).join('');
+        
+        // Skills to learn
+        const skillsToLearn = document.getElementById('skills-to-learn-tags');
+        skillsToLearn.innerHTML = (analysis.skills_to_learn || [])
+            .map(s => `<span class="tag tag-warning"><i data-lucide="plus" style="width:12px;height:12px;"></i> ${s}</span>`).join('');
+        
+        // Job analyses
+        const jobAnalysesDiv = document.getElementById('llm-job-analyses');
+        jobAnalysesDiv.innerHTML = jobAnalyses.map(job => `
+            <div class="job-analysis-card">
+                <div class="job-analysis-header">
+                    <div class="job-analysis-title">
+                        <h4><a href="/application/${job.id}">${job.company}</a></h4>
+                        <span>${job.job_title}</span>
+                    </div>
+                    <div class="match-score ${getScoreClass(job.match_score)}">
+                        ${job.match_score}%
+                        <span class="match-level">${job.match_level}</span>
+                    </div>
+                </div>
+                
+                <div class="job-analysis-body">
+                    <div class="job-analysis-insight">
+                        <i data-lucide="sparkles"></i>
+                        <p>${job.key_insight || ''}</p>
+                    </div>
+                    
+                    <div class="job-analysis-skills">
+                        <div class="skill-group">
+                            <h5><i data-lucide="check"></i> Matched Skills</h5>
+                            <div class="tags-list">
+                                ${(job.matched_skills || []).map(s => `<span class="tag tag-success">${s}</span>`).join('')}
+                            </div>
+                        </div>
+                        
+                        <div class="skill-group">
+                            <h5><i data-lucide="zap"></i> Transferable Skills</h5>
+                            <div class="tags-list">
+                                ${(job.transferable_skills || []).map(s => `<span class="tag tag-info">${s}</span>`).join('')}
+                            </div>
+                        </div>
+                        
+                        <div class="skill-group">
+                            <h5><i data-lucide="plus-circle"></i> Missing Skills</h5>
+                            <div class="tags-list">
+                                ${(job.missing_skills || []).map(s => `<span class="tag tag-warning">${s}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="job-analysis-rec">
+                        <h5><i data-lucide="message-circle"></i> Recommendation</h5>
+                        <p>${job.recommendations || ''}</p>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        
+        lucide.createIcons();
+    }
+    
+    function getScoreClass(score) {
+        if (score >= 70) return 'score-high';
+        if (score >= 40) return 'score-medium';
+        return 'score-low';
+    }
+});
+</script>
+{% endblock %}

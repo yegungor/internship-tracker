@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis History - Internship Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Analysis History</h1>
+        <p class="subtitle">Track your resume improvements over time</p>
+    </div>
+    <a href="{{ url_for('analysis') }}" class="btn btn-primary">
+        <i data-lucide="plus"></i>
+        New Analysis
+    </a>
+</div>
+
+{% if analyses %}
+    <!-- Compare Section -->
+    <div class="card mb-4" id="compare-section">
+        <div class="card-header">
+            <h2><i data-lucide="git-compare"></i> Compare Analyses</h2>
+        </div>
+        <div class="card-body">
+            <div class="compare-form">
+                <div class="compare-select">
+                    <label>Earlier Analysis:</label>
+                    <select id="compare-1" class="filter-select">
+                        <option value="">Select...</option>
+                        {% for a in analyses %}
+                        <option value="{{ a.id }}">{{ a.created_at.strftime('%b %d, %Y %H:%M') }} - {{ a.resume_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="compare-arrow">
+                    <i data-lucide="arrow-right"></i>
+                </div>
+                <div class="compare-select">
+                    <label>Later Analysis:</label>
+                    <select id="compare-2" class="filter-select">
+                        <option value="">Select...</option>
+                        {% for a in analyses %}
+                        <option value="{{ a.id }}">{{ a.created_at.strftime('%b %d, %Y %H:%M') }} - {{ a.resume_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button id="compare-btn" class="btn btn-secondary" disabled>
+                    <i data-lucide="bar-chart-2"></i>
+                    Compare
+                </button>
+            </div>
+            
+            <!-- Compare Results -->
+            <div id="compare-results" style="display: none;">
+                <div class="compare-results-grid">
+                    <div class="compare-card">
+                        <h4>Before</h4>
+                        <div class="compare-date" id="compare-date-1"></div>
+                        <div class="compare-score" id="compare-score-1"></div>
+                        <div class="compare-skills" id="compare-skills-1"></div>
+                    </div>
+                    
+                    <div class="compare-change" id="compare-change">
+                        <div class="change-arrow">
+                            <i data-lucide="trending-up"></i>
+                        </div>
+                        <div class="change-value" id="change-value"></div>
+                    </div>
+                    
+                    <div class="compare-card">
+                        <h4>After</h4>
+                        <div class="compare-date" id="compare-date-2"></div>
+                        <div class="compare-score" id="compare-score-2"></div>
+                        <div class="compare-skills" id="compare-skills-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History List -->
+    <div class="card">
+        <div class="card-header">
+            <h2>All Analyses</h2>
+            <span class="text-muted">{{ analyses|length }} total</span>
+        </div>
+        <div class="card-body">
+            <div class="history-list">
+                {% for analysis in analyses %}
+                <div class="history-item">
+                    <div class="history-main">
+                        <div class="history-icon {{ 'llm' if analysis.analysis_type == 'llm' else 'ats' }}">
+                            <i data-lucide="{{ 'sparkles' if analysis.analysis_type == 'llm' else 'scan' }}"></i>
+                        </div>
+                        <div class="history-info">
+                            <div class="history-title">
+                                <a href="{{ url_for('view_analysis', id=analysis.id) }}">
+                                    {{ analysis.resume_name }}
+                                </a>
+                                <span class="analysis-type-badge {{ analysis.analysis_type }}">
+                                    {{ 'AI Analysis' if analysis.analysis_type == 'llm' else 'ATS Analysis' }}
+                                </span>
+                            </div>
+                            <div class="history-meta">
+                                <span><i data-lucide="calendar"></i> {{ analysis.created_at.strftime('%b %d, %Y at %H:%M') }}</span>
+                                <span><i data-lucide="briefcase"></i> {{ analysis.jobs_analyzed }} jobs</span>
+                                {% if analysis.best_match_company %}
+                                <span><i data-lucide="trophy"></i> Best: {{ analysis.best_match_company }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="history-stats">
+                        <div class="history-stat">
+                            <span class="stat-value {{ 'score-high' if analysis.avg_match_score >= 70 else 'score-medium' if analysis.avg_match_score >= 40 else 'score-low' }}">
+                                {{ analysis.avg_match_score }}%
+                            </span>
+                            <span class="stat-label">Avg Match</span>
+                        </div>
+                        <div class="history-stat">
+                            <span class="stat-value">{{ analysis.total_skills_matched }}</span>
+                            <span class="stat-label">Skills Matched</span>
+                        </div>
+                    </div>
+                    
+                    <div class="history-actions">
+                        <a href="{{ url_for('view_analysis', id=analysis.id) }}" class="btn btn-sm btn-secondary">
+                            <i data-lucide="eye"></i>
+                            View
+                        </a>
+                        <form action="{{ url_for('delete_analysis', id=analysis.id) }}" method="POST" class="inline-form" onsubmit="return confirm('Delete this analysis?')">
+                            <button type="submit" class="btn btn-sm btn-ghost">
+                                <i data-lucide="trash-2"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="empty-state-large">
+        <i data-lucide="history"></i>
+        <h3>No analyses yet</h3>
+        <p>Run your first resume analysis to start tracking your progress</p>
+        <a href="{{ url_for('analysis') }}" class="btn btn-primary">
+            <i data-lucide="scan-search"></i>
+            Run Analysis
+        </a>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const compare1 = document.getElementById('compare-1');
+    const compare2 = document.getElementById('compare-2');
+    const compareBtn = document.getElementById('compare-btn');
+    const compareResults = document.getElementById('compare-results');
+    
+    function checkCanCompare() {
+        compareBtn.disabled = !compare1.value || !compare2.value;
+    }
+    
+    compare1.addEventListener('change', checkCanCompare);
+    compare2.addEventListener('change', checkCanCompare);
+    
+    compareBtn.addEventListener('click', async () => {
+        try {
+            const response = await fetch('/api/compare-analyses', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    id1: compare1.value,
+                    id2: compare2.value
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                displayComparison(data.comparison);
+            } else {
+                alert('Comparison failed: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    });
+    
+    function displayComparison(comp) {
+        compareResults.style.display = 'block';
+        
+        // Before
+        document.getElementById('compare-date-1').textContent = new Date(comp.analysis1.date).toLocaleDateString();
+        document.getElementById('compare-score-1').innerHTML = `<span class="big-score">${comp.analysis1.avg_score}%</span>`;
+        document.getElementById('compare-skills-1').textContent = `${comp.analysis1.skills_matched} skills matched`;
+        
+        // After
+        document.getElementById('compare-date-2').textContent = new Date(comp.analysis2.date).toLocaleDateString();
+        document.getElementById('compare-score-2').innerHTML = `<span class="big-score">${comp.analysis2.avg_score}%</span>`;
+        document.getElementById('compare-skills-2').textContent = `${comp.analysis2.skills_matched} skills matched`;
+        
+        // Change
+        const changeEl = document.getElementById('compare-change');
+        const changeValue = document.getElementById('change-value');
+        const arrow = changeEl.querySelector('i');
+        
+        if (comp.improved) {
+            changeEl.classList.add('positive');
+            changeEl.classList.remove('negative');
+            arrow.setAttribute('data-lucide', 'trending-up');
+            changeValue.innerHTML = `+${comp.score_change}%`;
+        } else if (comp.score_change < 0) {
+            changeEl.classList.add('negative');
+            changeEl.classList.remove('positive');
+            arrow.setAttribute('data-lucide', 'trending-down');
+            changeValue.innerHTML = `${comp.score_change}%`;
+        } else {
+            changeEl.classList.remove('positive', 'negative');
+            arrow.setAttribute('data-lucide', 'minus');
+            changeValue.innerHTML = `No change`;
+        }
+        
+        lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}

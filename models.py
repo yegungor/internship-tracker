@@ -61,6 +61,36 @@ class Application(db.Model):
     def __repr__(self):
         return f'<Application {self.company} - {self.job_title}>'
 
+class AnalysisHistory(db.Model):
+    """Store analysis results for history tracking."""
+    __tablename__ = 'analysis_history'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # What was analyzed
+    resume_name = db.Column(db.String(255))
+    cover_letter_name = db.Column(db.String(255))
+    analysis_type = db.Column(db.String(50))  # 'ats' or 'llm'
+    jobs_analyzed = db.Column(db.Integer)
+    job_ids = db.Column(db.Text)  # JSON list of job IDs
+    
+    # Results summary
+    avg_match_score = db.Column(db.Integer)
+    total_skills_matched = db.Column(db.Integer)
+    total_skills_missing = db.Column(db.Integer)
+    
+    # Full results (JSON)
+    full_results = db.Column(db.Text)  # JSON blob of entire analysis
+    
+    # For LLM analysis
+    overall_summary = db.Column(db.Text)
+    best_match_company = db.Column(db.String(255))
+    best_match_title = db.Column(db.String(255))
+    
+    def __repr__(self):
+        return f'<Analysis {self.id} - {self.resume_name} - {self.created_at}>'
+
 
 class Contact(db.Model):
     """People to connect with for each application."""
